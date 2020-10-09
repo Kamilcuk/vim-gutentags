@@ -9,21 +9,23 @@ DB_FILE=cscope.out
 PROJECT_ROOT=
 FILE_LIST_CMD=
 BUILD_INVERTED_INDEX=0
+findargs=
 
 ShowUsage() {
     echo "Usage:"
     echo "    $PROG_NAME <options>"
     echo ""
-    echo "    -e [exe=cscope]:      The cscope executable to run"
-    echo "    -f [file=cscope.out]: The path to the ctags file to update"
-    echo "    -p [dir=]:            The path to the project root"
-    echo "    -L [cmd=]:            The file list command to run"
-    echo "    -I:                   Builds an inverted index"
+    echo "    -e [exe=cscope]       The cscope executable to run"
+    echo "    -f [file=cscope.out]  The path to the ctags file to update"
+    echo "    -p [dir=]             The path to the project root"
+    echo "    -L [cmd=]             The file list command to run"
+    echo "    -I                    Builds an inverted index"
+	echo "    -F findarg            Pass an argument to find"
     echo ""
 }
 
 
-while getopts "h?e:f:p:L:I" opt; do
+while getopts "h?e:f:p:L:IF:" opt; do
     case $opt in
         h|\?)
             ShowUsage
@@ -44,6 +46,9 @@ while getopts "h?e:f:p:L:I" opt; do
         I)
             BUILD_INVERTED_INDEX=1
             ;;
+		F)
+			findargs="$OPTARG"
+			;;
     esac
 done
 
@@ -59,7 +64,7 @@ echo $$ > "$DB_FILE.lock"
 
 # Remove lock and temp file if script is stopped unexpectedly.
 CleanUp() {
-    rm -f "$DB_FILE.lock" "$DB_FILE.files" "$DB_FILE.temp"
+    rm -f "$DB_FILE.lock" "$DB_FILE.temp"
     if [ "$BUILD_INVERTED_INDEX" -eq 1 ]; then
         rm -f "$DB_FILE.temp.in" "$DB_FILE.temp.po"
     fi
@@ -84,9 +89,8 @@ if [ -n "${FILE_LIST_CMD}" ]; then
         done > "${DB_FILE}.files"
     fi
 else
-    find . -type f ! -name ${DB_FILE} | while read -r l; do
-        echo "\"${l}\""
-    done > "${DB_FILE}.files"
+	find . $findargs -type f ! -wholename "$DB_FILE" |
+	awk '{print "\""$0"\""}' > "${DB_FILE}.files"
 fi
 
 if [ ! -s "${DB_FILE}.files" ]; then

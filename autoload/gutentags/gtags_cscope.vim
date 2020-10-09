@@ -27,6 +27,10 @@ if !exists('g:gutentags_auto_add_gtags_cscope')
     let g:gutentags_auto_add_gtags_cscope = 1
 endif
 
+if !exists('g:gutentags_find_args')
+	let g:gutentags_find_args = ''
+endif
+
 " }}}
 
 " Gutentags Module Interface {{{
